@@ -186,3 +186,129 @@ public (active)
 
 #### Sambaのインストール
 
+```shell
+[root@file ~]# yum -y install samba
+```
+
+```shell
+インストール:
+  samba.x86_64 0:4.10.16-20.el7_9                                                                                       
+依存性関連をインストールしました:
+  pyldb.x86_64 0:1.5.4-2.el7                         pytalloc.x86_64 0:2.1.16-1.el7                      python-tdb.x86_64 0:1.3.18-1.el7           
+  samba-common-libs.x86_64 0:4.10.16-20.el7_9        samba-common-tools.x86_64 0:4.10.16-20.el7_9        samba-libs.x86_64 0:4.10.16-20.el7_9       
+
+依存性を更新しました:
+  dbus.x86_64 1:1.10.24-15.el7                         dbus-libs.x86_64 1:1.10.24-15.el7               dbus-x11.x86_64 1:1.10.24-15.el7              
+  libldb.x86_64 0:1.5.4-2.el7                          libsmbclient.x86_64 0:4.10.16-20.el7_9          libtalloc.x86_64 0:2.1.16-1.el7               
+  libtdb.x86_64 0:1.3.18-1.el7                         libtevent.x86_64 0:0.9.39-1.el7                 libwbclient.x86_64 0:4.10.16-20.el7_9         
+  samba-client-libs.x86_64 0:4.10.16-20.el7_9          samba-common.noarch 0:4.10.16-20.el7_9         
+
+完了しました!
+```
+
+```shell
+[root@file ~]# vi /etc/samba/smb.conf
+```
+
+```conf
+# See smb.conf.example for a more detailed config file or
+# read the smb.conf manpage.
+# Run 'testparm' to verify the config is correct after
+# you modified it.
+
+[global]
+        workgroup = WORKGROUP
+        security = user
+
+        passdb backend = tdbsam
+
+        printing = cups
+        printcap name = cups
+        load printers = yes
+        cups options = raw
+```
+
+```shell
+[root@localhost ~]# smbpasswd -a user
+```
+
+```shell
+New SMB password:
+Retype new SMB password:
+Added user user.
+```
+
+```shell
+[root@localhost ~]# systemctl start smb.service
+```
+
+```shell
+[root@localhost ~]# systemctl start nmb.service
+```
+
+```shell
+[root@localhost ~]# systemctl enable smb.service
+```
+
+```shell
+[root@localhost ~]# systemctl enable nmb.service
+```
+
+```shell
+[root@localhost ~]# firewall-cmd --add-service=samba --zone=public
+[root@localhost ~]# firewall-cmd --add-service=samba --zone=public --permanent
+```
+
+```shell
+[root@localhost ~]# setenforce 0
+```
+
+```shell
+C:\Users\user>net use
+```
+```shell
+C:\Users\user>net use \\file.j00.sangidai.com\IPC$  /delete
+```
+
+```shell
+[root@localhost ~]# vi /var/named/j00.sangidai.zone
+```
+
+```conf
+TTL    86400
+@       IN      SOA     ns1.j00.sangidai.com. postmaster.j00.sangidai.com. (
+                2022112501      ;serial
+                3h              ;refresh
+                1h              ;retry
+                1w              ;expire
+                1h )            ;minimum
+
+        IN      NS      ns1.j00.sangidai.com.
+        IN      A       10.45.48.45
+
+ns1     IN      A       10.45.48.45
+file    IN      CNAME   ns1
+```
+
+```shell
+[root@localhost ~]# vi /var/named/48.45.10.rzone
+```
+
+```shell
+$TTL    86400
+@       IN      SOA     ns1.j00.sangidai.com. postmaster.j00.sangidai.com. (
+                2022112501      ;serial
+                3h              ;refresh
+                1h              ;retry
+                1w              ;expire
+                1h )            ;minimum
+
+        IN      NS      ns1.j00.sangidai.com.
+
+45      IN      PTR     ns1.j00.sangidai.com.
+```
+
+```shell
+[root@localhost ~]# systemctl restart named-chroot.service
+```
+
