@@ -399,6 +399,7 @@ $TTL    86400
 
 
         IN      NS      ns1.j00.sangidai.com.
+        IN      A       10.46.48.26
 
 ns1     IN      A       10.45.48.26
 ```

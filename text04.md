@@ -595,6 +595,7 @@ $TTL    86400
         IN      NS      ns1.j00.sangidai.com.
 
 45      IN      PTR     ns1.j00.sangidai.com.
+45      IN      PTR     file.j00.sangidai.com.
 ```
 
 ### ゾーンファイルの確認
