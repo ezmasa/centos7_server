@@ -333,3 +333,19 @@ ssl_cert = </etc/pki/dovecot/certs/dovecot.pem
 ssl_key = </etc/pki/dovecot/private/dovecot.pem
 ```
 
+```shell
+[root@localhost ~]# mkdir -p /etc/skel/Maildir/{new,cur,tmp}
+[root@localhost ~]# chmod -R 700 /etc/skel/Maildir/
+```
+
+```shell
+[user@localhost ~]$ mkdir ~/Maildir
+[user@localhost ~]$ chmod -R 700 ~/Maildir/
+```
+
+```shell
+[root@localhost ~]# systemctl start postfix.service
+[root@localhost ~]# systemctl start dovecot.service
+[root@localhost ~]# systemctl enable postfix.service
+[root@localhost ~]# systemctl enable dovecot.service
+```
