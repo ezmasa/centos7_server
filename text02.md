@@ -10,25 +10,35 @@ DNS(ドメイン・ネーム・システム)は、インターネットを利用
 
 自身の持つデータベースからホストのIPアドレスを提供するだけでなく、クライアントが外部ドメインのホストへ接続する際に、そのホスト（例：www.xxxyyy.co.jp）のIPアドレスを「.」「jp」「co.jp」「xxxyyy.co.jp」と順番にそのドメインを管理するネームサーバに問い合わせてIPアドレスを知り、クライアントへ提供する。誰かがインターネットを利用するとき、必ずこのDNSの階層型分散データベースを利用している。DNSサーバは、インターネットを支える重要な役割を担っている。
 
-## 簡易的な名前解決
+## １．簡易的な名前解決
 
 当初、IPアドレスに代わるホストの指定方法として、hostsファイルによる識別が行われていた。当時は、ホストの追加（削除）の度にhostsファイルを更新し、公開していた。
 
-- www.google.comに疎通確認する。
+### www.google.comに疎通確認
+
+pingコマンドでホスト名`www.google.com`を指定して、疎通できるのか確認してみる。
 
 ```shell
 [user@localhost /]$ ping www.google.com
 ping: www.google.com: 名前またはサービスが不明です
 ```
 
-- hostsの権限を確認する。
+上記のように送れないことが確認できる。
+
+### hostsの権限を確認
+
+ls -l コマンドで、hostsファイルのファイルのパーミッション（所有権）を確認してみる。
 
 ```shell
 [root@localhost ~]# ls -l /etc/hosts
 -rw-r--r--. 1 root root 188 11月 16 17:43 /etc/hosts
 ```
 
-- userに書込みの権限を付与する。
+userには、読込みのみ許可されていることが確認できる。
+
+### userに書込みの権限を付与
+
+chmodコマンドで、userにも書込み可能にする。
 
 ```shell
 [root@localhost ~]# chmod 666 /etc/hosts
@@ -36,19 +46,32 @@ ping: www.google.com: 名前またはサービスが不明です
 ログアウト
 ```
 
-- 編集する。
+再度、ls -l コマンドで、hostsファイルのファイルのパーミッション（所有権）を確認してみる。
+
+```shell
+[root@localhost ~]# ls -l /etc/hosts
+-rw-rw-rw-. 1 root root 188 11月 16 17:43 /etc/hosts
+```
+
+### hostsファイルの編集
+
+viコマンドでファイルを開く。
 
 ```shell
 [user@localhost /]$ vi /etc/hosts
 ```
 
-- /etc/hostsの編集
+- 142.251.42.132 www.google.comの追加
 
 ```txt
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 142.251.42.132 www.google.com
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 ```
+
+### 動作確認
+
+再度、pingで疎通確認してみる。
 
 ```shell
 [user@localhost /]$ ping www.google.com
@@ -58,7 +81,7 @@ PING www.google.com (142.251.42.132) 56(84) bytes of data.
 64 bytes from www.google.com (142.251.42.132): icmp_seq=3 ttl=57 time=22.8 ms
 ```
 
-## DNSキャッシュサーバ構築
+## ２．DNSキャッシュサーバ構築
 
 ### DNSキャッシュサーバとは
 
@@ -73,9 +96,7 @@ DNSキャッシュサーバは、クライアントからの要求を、自身�
 - 該当したらキャッシュからクライアントへ返し、処理する。該当しない場合は、上位DNSへ問い合わせる
 - 応答からデータをキャッシュに加えると同時にクライアントへ返す
 
-### DNSサーバの導入
-
-#### DNSサーバソフトのインストール
+### DNSサーバソフト（BIND）のインストール
 
 - BINDのインストール
 
@@ -138,13 +159,13 @@ Loading mirror speeds from cached hostfile
 何もしません
 ```
 
-#### namde.confの設定
+### namde.confの設定
 
 以下のコマンドにて、named.confを開きます。
 
 ```shell
 [root@localhost ~]# vi /etc/named.conf
-``` 
+```
 
 以下の設定箇所を変更
 
@@ -213,13 +234,15 @@ include "/etc/named.rfc1912.zones";
 include "/etc/named.root.key";
 ```
 
-- named.confのチェック
+### named.confのチェック
+
+以下のコマンドで、named.confファイルに設定ミスや記述ミスが無いか確認をします。設定にミスがある場合、デバッグ機能として、エラーコードが吐き出されます。
 
 ```shell
 [root@localhost ~]# named-checkconf
 ```
 
-#### BINDの操作
+### BINDの操作
 
 - BINDの起動
 
@@ -249,7 +272,7 @@ include "/etc/named.root.key";
            └─1122 /usr/sbin/named -u named -c /etc/named.conf -t /var/named/chroot
 ```
 
-#### ファイアウォールの操作
+### ファイアウォールの操作
 
 - FirewallにDNSサービス用の接続を許可
 
@@ -290,16 +313,16 @@ Proto Recv-Q Send-Q Local Address           Foreign Address         State
 udp        0      0 10.45.48.26:53          0.0.0.0:*  
 ```
 
-
 ### 動作確認
 
 クライアントPCにて、DNSサーバのIPアドレスを、DNSサーバとして、指定する。
 
 ```shell
-C:\Users\user>ping www.google.com                                                                                                                                                                                                               www.google.com [142.250.196.100]に ping を送信しています 32 バイトのデータ:                                             142.250.196.100 からの応答: バイト数 =32 時間 =8ms TTL=57                                                               142.250.196.100 からの応答: バイト数 =32 時間 =9ms TTL=57                                                               142.250.196.100 からの応答: バイト数 =32 時間 =9ms TTL=57                                                               142.250.196.100 からの応答: バイト数 =32 時間 =9ms TTL=57                                                                                                                                                                                       142.250.196.100 の ping 統計:                                                                                               パケット数: 送信 = 4、受信 = 4、損失 = 0 (0% の損失)、                                                              ラウンド トリップの概算時間 (ミリ秒):                                                                                       最小 = 8ms、最大 = 9ms、平均 = 8ms
+C:\Users\user>ping www.google.com
+ww.google.com [142.250.196.100]に ping を送信しています 32 バイトのデータ:                                             142.250.196.100 からの応答: バイト数 =32 時間 =8ms TTL=57                                          142.250.196.100 からの応答: バイト数 =32 時間 =9ms TTL=57                                          142.250.196.100 からの応答: バイト数 =32 時間 =9ms TTL=57                                          142.250.196.100 からの応答: バイト数 =32 時間 =9ms TTL=57               142.250.196.100 の ping 統計:                                               パケット数: 送信 = 4、受信 = 4、損失 = 0 (0% の損失)、                                           ラウンド トリップの概算時間 (ミリ秒):                                               最小 = 8ms、最大 = 9ms、平均 = 8ms
 ```
 
-## DNSネームサーバ構築
+## ３．DNSネームサーバ構築
 
 ### DNSネームサーバとは
 
@@ -312,8 +335,10 @@ DNSサーバには、「キャッシュサーバ（フルリゾルバ）」の�
 |  ネームサーバ  |  ns1.j00.sangidai.com  |　10.45.46.26 |
 |  管理者メアド  |  postmaster@j00.sangidai.com  |  10.45.46.26  |
 
-#### named.confの設定
 
+### named.confの設定
+
+/* 追記部分 */以下を追加する。
 
 ```shell
 zone "." IN {
@@ -334,13 +359,15 @@ zone "48.45.10.in-addr.arpa" IN {
 };
 ```
 
-- named.confのチェック
+### named.confのチェック
+
+以下のコマンドで、named.confファイルに設定ミスや記述ミスが無いか確認をします。設定にミスがある場合、デバッグ機能として、エラーコードが吐き出されます。
 
 ```shell
 [root@localhost ~]# named-checkconf
 ```
 
-#### ゾーンファイルの作成
+### ゾーンファイルとは
 
 - 正引き：ホスト名からIPアドレスを知ること。
 - 逆引き：IPアドレスからホスト名を知ること。
@@ -348,10 +375,10 @@ zone "48.45.10.in-addr.arpa" IN {
 ファイルの保存場所と名前は、`named.conf`ファイル上の記述を参照し、新規に作成する。
 
 - 作成するゾーン
-                - 正引きドメイン「j00.sangidai.com」
-                - 逆引きドメイン「46.45.10.in-addr.arpa」
+  - 正引きドメイン「j00.sangidai.com」
+  - 逆引きドメイン「46.45.10.in-addr.arpa」
 
-#### j00.sangidai.zoneの作成
+### ゾーンファイルの作成
 
 - j00.sangidai.zoneを作成
 
@@ -376,19 +403,6 @@ $TTL    86400
 ns1     IN      A       10.45.48.26
 ```
 
-- ゾーンファイルの確認
-
-```shell
-[root@localhost ~]# named-checkzone j00.sangidai.com /var/named/j00.sangidai.zone
-```
-
-以下のように表示されれば成功
-
-```shell
-zone j00.sangidai.com/IN: loaded serial 2022111702
-OK
-```
-
 - 46.45.10.rzoneを作成
 
 ```shell
@@ -410,7 +424,18 @@ $TTL    86400
 26      IN      PTR     ns1.j00.sangidai.com.
 ```
 
-- ゾーンファイルの確認
+### ゾーンファイルの確認
+
+```shell
+[root@localhost ~]# named-checkzone j00.sangidai.com /var/named/j00.sangidai.zone
+```
+
+以下のように表示されれば成功
+
+```shell
+zone j00.sangidai.com/IN: loaded serial 2022111702
+OK
+```
 
 ```shell
 [root@localhost ~]# named-checkzone 48.45.10.in-addr.arpa /var/named/48.45.10.rzone
@@ -429,5 +454,7 @@ OK
 [root@localhost ~]# systemctl restart named-chroot.service
 ```
 
-全て成功したらファイアウォールの設定等を行うこと。
+再度、ファイアウォールの設定等を行うこと。
+
+### 動作確認
 
