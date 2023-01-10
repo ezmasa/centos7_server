@@ -302,7 +302,7 @@ sampledir     テンプレート  ドキュメント  音楽  公開
 -rw-rw-rw-. 1 user root    7 11月 16 16:44 sample.txt
 ```
 
-### ファイル内容の表示及び閲覧するコマンド
+### ファイル内容の表示及び検索するコマンド
 
 #### ファイルの内容を表示するコマンド
 
@@ -320,3 +320,13 @@ sample
 ```shell
 [root@localhost ~]# less sample.txt 
 ```
+
+#### ファイルの内容を検索するコマンド
+
+- grep 検索文字列 ファイル名
+    - ファイル名から検索文字列が含めれる行を表示する
+
+```shell
+[root@localhost ~]# grep a sample.txt
+```
+
