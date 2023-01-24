@@ -225,6 +225,10 @@ zone "46.45.10.in-addr.arpa" IN {
 - jxx.sangidai.zoneを作成
 
 ```shell
+[root@localhost ~]# vim /var/named/jxx.sangidai.zone
+```
+
+```shell
 $TTL    86400
 @       IN      SOA     ns1.j00sangidai.com. postmaster.j00.sangidai.com. (
                 2022111702      ;serial
