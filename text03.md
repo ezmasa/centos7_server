@@ -164,7 +164,7 @@ FireFox等のブラウザより、以下のアドレスにアクセスする。
 | ---- | ---- | ---- | ---- |
 |  ネームサーバ  |  ns1  |　jxx.sangidai.com  |  10.45.46.xx |
 |  管理者メアド  |  postmaster  |  jxx.sangidai.com  |  10.45.46.xx  |
-|　ウェブサーバ  |  www  |  jxx.sangidai.com  |  10.45.46.xx  |
+|  ウェブサーバ  |  www  |  jxx.sangidai.com  |  10.45.46.xx  |
 
 ### DNSサーバの構築
 
