@@ -25,6 +25,8 @@ Webブラウザからのリクエストに応じて静的画面や画像など�
 
 - httpdのインストール
 
+yumコマンドでhttpdをインストールする。
+
 ```shell
 [root@localhost ~]# yum -y install httpd
 ```
@@ -114,7 +116,11 @@ DocumentRoot "/var/www/html"
 <IfModule dir_module>
     DirectoryIndex index.html
 </IfModule>
+
+/* 以下省略 */
 ```
+
+### Apacheの再起動
 
 - httpdの再起動
 
@@ -122,17 +128,101 @@ DocumentRoot "/var/www/html"
 [root@localhost ~]# systemctl restart httpd.service
 ```
 
+### ファイアウォールの設定
+
+```shell
+[root@localhost ~]# firewall-cmd --add-service=http --permanent
+success
+```
+
+```shell
+[root@localhost ~]# firewall-cmd --add-service=https --permanent
+success
+```
+
+```shell
+[root@localhost ~]# firewall-cmd --reload
+success
+```
+
 ### 動作確認
 
-FireFox等のブラウザより、以下のアドレス<http://localhost>にアクセスする。
+FireFox等のブラウザより、以下のアドレスにアクセスする。
+
+- <http://localhost>
+
+- <http://127.0.0.1>
+
+- <http://PCのIPアドレス>
+
 
 ## ２．DNSサーバの設定
 
-### j00.sangidai.zoneの変更
+### 構築するサーバの設定
 
-CNAMEにて、正規表現のホスト名に対し、別名を付ける。複数のホスト名をAレコードで同じIPアドレスに設定しても似たような動作をさせることができるが、一つをAレコードでIPアドレスに結びつけ、別名をCNAMEレコードで定義しておけば、IPアドレスが変わった際に一箇所を変更するだけで済む。ただし、CNAMEレコードで定義された別名はMXレコードやNSレコードを設定することができないため、そのような設定に必要な名前には用いることができない。
+|  名前  |  ホスト名 |  ドメイン名  |  IPアドレス  |
+| ---- | ---- | ---- | ---- |
+|  ネームサーバ  |  ns1  |　jxx.sangidai.com  |  10.45.46.xx |
+|  管理者メアド  |  postmaster  |  jxx.sangidai.com  |  10.45.46.xx  |
+|　ウェブサーバ  |  www  |  jxx.sangidai.com  |  10.45.46.xx  |
 
-- www   IN    A   10.45.48.26でも構わない  
+### DNSサーバの構築
+
+- biundとbind-chrootのインストール
+
+```shell
+[root@localhost ~]# yum -y install bind bind-chroot
+```
+
+### BINDの操作
+
+- BINDの起動
+
+```shell
+[root@localhost ~]# systmel start named-chroot.service
+```
+
+- OS起動時にBINDの自動起動を有効化
+
+```shell
+[root@localhost ~]# systemctl enable named-chroot.service
+```
+
+- 状態の確認
+
+```shell
+[root@localhost ~]# systemctl status named-chroot.service
+```
+
+### named.confの設定
+
+- /* 追記部分 */以下を追加する。
+
+```zone
+/* 追記部分 */
+
+zone "jxx.sangidai.com" IN {
+        type master;
+        file "jxx.sangidai.zone";
+};
+
+zone "46.45.10.in-addr.arpa" IN {
+        type master;
+        file "46.45.10.rzone";
+};
+```
+
+### named.confの確認
+
+```shell
+[root@localhost ~]# named-checkconf
+```
+
+### ゾーンファイルの設定
+
+今回は、DNSサーバとWebサーバは同一内のPCに構築する。CNAMEにて、正規表現のホスト名に対し、別名を付ける。複数のホスト名をAレコードで同じIPアドレスに設定しても似たような動作をさせることができるが、一つをAレコードでIPアドレスに結びつけ、別名をCNAMEレコードで定義しておけば、IPアドレスが変わった際に一箇所を変更するだけで済む。ただし、CNAMEレコードで定義された別名はMXレコードやNSレコードを設定することができないため、そのような設定に必要な名前には用いることができない。
+
+- jxx.sangidai.zoneを作成
 
 ```shell
 $TTL    86400
@@ -144,34 +234,52 @@ $TTL    86400
                 1h )            ;minimum
 
 
-        IN      NS      ns1.j00.sangidai.com.
-        IN      A       10.46.48.26
+        IN      NS      ns1.jxx.sangidai.com.
+        IN      A       10.46.46.xx
 
-ns1     IN      A       10.45.48.26
+ns1     IN      A       10.45.46.xx
 www     IN      CNAME   ns1
+```
+
+www   IN    A   10.45.46.xxでも構わない
+
+
+- 46.45.10.rzoneを作成
+
+```shell
+[root@localhost ~]# vim /var/named/46.45.10.rzone
+```
+
+以下のように記述する。
+
+```shell
+$TTL    86400
+@       IN      SOA     ns1.jxx.sangidai.com. postmaster.j00.sangidai.com. (
+                2022111701      ;serial
+                3h              ;refresh
+                1h              ;retry
+                1w              ;expire
+                1h )            ;minimum
+
+        IN      NS      ns1.jxx.sangidai.com.
+xx      IN      PTR     ns1.jxx.sangidai.com.
 ```
 
 ### ゾーンファイルの確認
 
 ```shell
-[root@localhost ~]# named-checkzone j00.sangidai.com /var/named/j00.sangidai.zone
+[root@localhost ~]# named-checkzone jxx.sangidai.com /var/named/jxx.sangidai.zone
 ```
 
-### BINDサービスの再起動
-
 ```shell
-[root@localhost ~]# systemctl restart named-chroot.service
+[root@localhost ~]# named-checkzone 46.45.10.in-addr.arpa /var/named/46.45.10.rzone
 ```
 
 ### ファイアウォールの設定
 
-```shell
-[root@localhost ~]# firewall-cmd --add-service http
-success
-```
 
 ```shell
-[root@localhost ~]# firewall-cmd --add-service http --permanent
+[root@localhost ~]# firewall-cmd --add-service=dns --permanent
 success
 ```
 
@@ -182,7 +290,7 @@ success
 
 ### 動作確認
 
-以下のアドレス<http://www.j00.sangidai.com>にアクセスする
+以下のアドレス<http://www.jxx.sangidai.com>にアクセスする
 
 ## ３．HTML言語によるホームページ作成
 
@@ -191,7 +299,7 @@ Webサイトは、HTML言語というマークアップ言語とCSSというス�
 - inde.htmlの作成
 
 ```shell
-[root@localhost ~]# vi /var/www/html/index.html
+[root@localhost ~]# vim /var/www/html/index.html
 ```
 
 以下を記述する
@@ -217,7 +325,7 @@ Webサイトは、HTML言語というマークアップ言語とCSSというス�
 
 ### 動作確認
 
-以下のアドレス<http://www.j00.sangidai.com>にアクセスする
+以下のアドレス<http://www.jxx.sangidai.com>にアクセスする
 
 ## ４．CGIによる動的Webサイト作成
 
@@ -229,12 +337,12 @@ HTMLによるホームページの表示は、常に同じ内容のデータが�
 - httpd.confの変更
 
 ```shell
-[root@localhost ~]# vi /etc/httpd/conf/httpd.conf 
+[root@localhost ~]# vim /etc/httpd/conf/httpd.conf 
 ```
 
 以下の修正箇所を変更する。
 
-- `ExecCGIを追加
+- ExecCGIを追加
   - Options Indexes FollowSymLinks ExecCGI
 
 - #(コメントアウト)を外し、行を有効化
@@ -288,10 +396,10 @@ HTMLによるホームページの表示は、常に同じ内容のデータが�
     # To parse .shtml files for server-side includes (SSI):
     # (You will also need to add "Includes" to the "Options" directive.)
     #
-/* 省略 */
+/* 以下省略 */
 ```
 
-- httpdの再起動
+### Apacheの再起動
 
 ```shell
 [root@localhost ~]# systemctl restart httpd.service 
@@ -342,7 +450,7 @@ void main(){
 
 ### Cコンパイラのインストール
 
-- gccコンパイラのインストール
+- gccのインストール
 
 ```shell
 [root@localhost ~]# yum -y install gcc
@@ -356,7 +464,7 @@ void main(){
 
 ### 動作確認
 
-以下のアドレス<http://www.j00.sangidai.com/helooCGI.cgi>にアクセスする。
+以下のアドレス<http://www.jxx.sangidai.com/helooCGI.cgi>にアクセスする。
 
 ## ５．PHPによる動的Webサイト作成
 
@@ -447,6 +555,8 @@ Zend Engine v2.4.0, Copyright (c) 1998-2013 Zend Technologies
 AddDefaultCharset UTF-8
 
 <IfModule mime_magic_module>
+
+/* 以下省略 */
 ```
 
 ### プログラムの作成
@@ -454,7 +564,7 @@ AddDefaultCharset UTF-8
 - HTMLファイルの作成
 
 ```shell
-[root@localhost ~]# vi /var/www/html/input.html
+[root@localhost ~]# vim /var/www/html/input.html
 ```
 
 以下の内容を記述する。
@@ -479,7 +589,7 @@ AddDefaultCharset UTF-8
 - PHPファイルの作成
 
 ```shell
-[root@localhost ~]# vi /var/www/html/regist.php
+[root@localhost ~]# vim /var/www/html/regist.php
 ```
 
 以下の内容を記述する。
@@ -504,7 +614,7 @@ AddDefaultCharset UTF-8
 </html>
 ```
 
-- httpdの再起動
+### Apacheの再起動
 
 ```shell
 [root@localhost ~]# systemctl restart httpd.service
@@ -512,5 +622,5 @@ AddDefaultCharset UTF-8
 
 ### 動作確認
 
-以下のアドレス<http://www.j00.sangidai.com/input.html>にアクセスする。
+以下のアドレス<http://www.jxx.sangidai.com/input.html>にアクセスする。
 
