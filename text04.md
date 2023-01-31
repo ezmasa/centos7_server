@@ -217,6 +217,12 @@ public (active)
 
 ## １．ファイルサーバ(Samba)の導入
 
+### SELinuxの無効化
+
+```shell
+[root@localhost ~]# setenforce 0
+```
+
 ### sambaのインストール
 
 ```shell
@@ -230,21 +236,19 @@ public (active)
   samba.x86_64 0:4.10.16-20.el7_9                                                                                       
 依存性関連をインストールしました:
   pyldb.x86_64 0:1.5.4-2.el7                         pytalloc.x86_64 0:2.1.16-1.el7                      python-tdb.x86_64 0:1.3.18-1.el7           
-  samba-common-libs.x86_64 0:4.10.16-20.el7_9        samba-common-tools.x86_64 0:4.10.16-20.el7_9        samba-libs.x86_64 0:4.10.16-20.el7_9       
-
+  samba-common-libs.x86_64 0:4.10.16-20.el7_9        samba-common-tools.x86_64 0:4.10.16-20.el7_9        samba-libs.x86_64 0:4.10.16-20.el7_9
 依存性を更新しました:
   dbus.x86_64 1:1.10.24-15.el7                         dbus-libs.x86_64 1:1.10.24-15.el7               dbus-x11.x86_64 1:1.10.24-15.el7              
   libldb.x86_64 0:1.5.4-2.el7                          libsmbclient.x86_64 0:4.10.16-20.el7_9          libtalloc.x86_64 0:2.1.16-1.el7               
   libtdb.x86_64 0:1.3.18-1.el7                         libtevent.x86_64 0:0.9.39-1.el7                 libwbclient.x86_64 0:4.10.16-20.el7_9         
-  samba-client-libs.x86_64 0:4.10.16-20.el7_9          samba-common.noarch 0:4.10.16-20.el7_9         
-
+  samba-client-libs.x86_64 0:4.10.16-20.el7_9          samba-common.noarch 0:4.10.16-20.el7_9
 完了しました!
 ```
 
 ### smb.confの設定
 
 ```shell
-[root@file ~]# vi /etc/samba/smb.conf
+[root@file ~]# vim /etc/samba/smb.conf
 ```
 
 教科書「CentOS7 サーバー徹底構築」のp.238を確認する。
