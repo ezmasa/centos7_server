@@ -457,6 +457,18 @@ Windowsからの接続するユーザを全てGuest接続として、すべて�
 
 ## ４．ホスト名でのアクセス
 
+### DNSサーバの設定
+
+VM Wareを2つ同時に起動し、サーバPCを2台立ち上げる。
+1つをFailサーバ(IP:10.45.46.yy)、もう1つをDNSサーバ(IP:10.45.46.xx)とする。
+
+### 構築するサーバの設定
+
+|  名前  |  ホスト名 |  ドメイン名  |  IPアドレス  |
+| ---- | ---- | ---- | ---- |
+|  ネームサーバ  |  dns1  |　itxx.sangi.local  |  10.45.46.xx |
+|  管理者メアド  |  postmaster  |  itxx.sangi.local  |  -  |
+|  ファイルサーバ  |  file  |  itxx.sangi.local  |  10.45.46.yy  |
 ### namde.confの設定
 
 以下のコマンドにて、named.confを開きます。
@@ -471,85 +483,12 @@ Windowsからの接続するユーザを全てGuest接続として、すべて�
 - allow-query     { localhost; 10.45.46.0/24; };
 - forwarders { 10.45.100.100; };
 - forward only;
-- zone "jxx.sangidai.com" IN {
-        type master;
-        file "jxx.sangidai.zone";
-  };
+- 正引きゾーンと逆引きゾーンの追加
 
-  zone "46.45.10.in-addr.arpa" IN {
-        type master;
-        file "46.45.10.rzone";
-  };
-
-```shell
-/
-// named.conf
-//
-// Provided by Red Hat bind package to configure the ISC BIND named(8) DNS
-// server as a caching only nameserver (as a localhost DNS resolver only).
-//
-// See /usr/share/doc/bind*/sample/ for example named configuration files.
-//
-// See the BIND Administrator's Reference Manual (ARM) for details about the
-// configuration located in /usr/share/doc/bind-{version}/Bv9ARM.html
-
-options {
-        //DNSサーバ及びクライアントPCのネットワークアドレスを追加
-        listen-on port 53 { 127.0.0.1; 10.45.46.0/24; };
-        listen-on-v6 port 53 { ::1; };
-        directory       "/var/named";
-        dump-file       "/var/named/data/cache_dump.db";
-        statistics-file "/var/named/data/named_stats.txt";
-        memstatistics-file "/var/named/data/named_mem_stats.txt";
-        recursing-file  "/var/named/data/named.recursing";
-        secroots-file   "/var/named/data/named.secroots";
-        //DNSサーバ及びクライアントPCのネットワークアドレスを追加
-        allow-query     { localhost; 10.45.46.0/24; };
-        forwarders { 10.45.100.100; };
-
-        /* 省略 */
-        
-        recursion yes;
-        forward only;
-
-
-        dnssec-enable yes;
-        dnssec-validation yes;
-
-        /* Path to ISC DLV key */
-        bindkeys-file "/etc/named.root.key";
-
-        managed-keys-directory "/var/named/dynamic";
-
-        pid-file "/run/named/named.pid";
-        session-keyfile "/run/named/session.key";
-};
-
-logging {
-        channel default_debug {
-                file "data/named.run";
-                severity dynamic;
-        };
-};
-
-zone "." IN {
-        type hint;
-        file "named.ca";
-};
-
-zone "jxx.sangidai.com" IN {
-        type master;
-        file "jxx.sangidai.zone";
-};
-
-zone "46.45.10.in-addr.arpa" IN {
-        type master;
-        file "46.45.10.rzone";
-};
-
-include "/etc/named.rfc1912.zones";
-include "/etc/named.root.key";
-```
+| ゾーン種類 | タイプ | ゾーン名 | ファイル名 |
+| --- | --- | --- | --- |
+| 正引き | master |itxx.sangi.local | itxx.sangi.db |
+| 逆引き | master | 46.45.10.in-addr.arpa | 46.45.10.in-addr.arpa.db
 
 ### named.confのチェック
 
@@ -559,72 +498,41 @@ include "/etc/named.root.key";
 [root@localhost ~]# named-checkconf
 ```
 
-### j00.sangidai.zoneの変更
+### itxx.sangi.dbの変更
 
 ```shell
-[root@localhost ~]# vim /var/named/jxx.sangidai.zone
+[root@localhost ~]# vim /var/named/itxx.sangi.db
 ```
+
+- Aレコードの追記
 
 ```conf
 TTL    86400
-@       IN      SOA     ns1.jxx.sangidai.com. postmaster.j00.sangidai.com. (
-                2022112501      ;serial
-                3h              ;refresh
-                1h              ;retry
-                1w              ;expire
-                1h )            ;minimum
 
-        IN      NS      ns1.jxx.sangidai.com.
-        IN      A       10.45.46.xx
+/* 省略 */
 
-ns1     IN      A       10.45.46.xx
-file    IN      A       10.45.46.xx
+file    IN      A       10.45.46.yy
 ```
 
-### 48.45.10.rzoneの変更
+### 48.45.10.in-addr.arpa.dbの変更
 
 ```shell
-[root@localhost ~]# vim /var/named/46.45.10.rzone
+[root@localhost ~]# vim /var/named/46.45.10.in-addr.arpa.db
 ```
+
+- PTRレコードの追加
 
 ```shell
 $TTL    86400
-@       IN      SOA     ns1.jxx.sangidai.com. postmaster.j00.sangidai.com. (
-                2022112501      ;serial
-                3h              ;refresh
-                1h              ;retry
-                1w              ;expire
-                1h )            ;minimum
 
-        IN      NS      ns1.jxx.sangidai.com.
+/* 省略 */
 
-xx      IN      PTR     ns1.jxx.sangidai.com.
-xx      IN      PTR     file.jxx.sangidai.com.
+yy      IN      PTR     file.itxx.sangi.local.
 ```
 
 ### ゾーンファイルの確認
 
-```shell
-[root@localhost ~]# named-checkzone jxx.sangidai.com /var/named/jxx.sangidai.zone
-```
-
-以下のように表示されれば成功
-
-```shell
-zone j00.sangidai.com/IN: loaded serial 2022111702
-OK
-```
-
-```shell
-[root@localhost ~]# named-checkzone 46.45.10.in-addr.arpa /var/named/46.45.10.rzone
-```
-
-以下のように表示されれば成功
-
-```shell
-zone 46.45.10.in-addr.arpa/IN: loaded serial 2022111701
-OK
-```
+named-checkzoneコマンドで正引きゾーンと逆引きゾーンのファイルを確認する。
 
 ### BINDの操作
 
@@ -634,13 +542,13 @@ OK
 [root@localhost ~]# systmel start named-chroot.service
 ```
 
-- OS起動時にBINDの自動起動を有効化
-
 ```shell
 [root@localhost ~]# systemctl enable named-chroot.service
 ```
 
-再度、ファイアウォールの設定等を行うこと。
+### ファイアウォールの操作
+
+ファイアウォールの設定等を行うこと。
 
 ### 動作確認
 
@@ -653,5 +561,5 @@ C:\Users\user>net use
 ```
 
 ```shell
-C:\Users\user>net use \\file.jxx.sangidai.com\IPC$  /delete
+C:\Users\user>net use \\file.itxx.sangi.local\IPC$  /delete
 ```
