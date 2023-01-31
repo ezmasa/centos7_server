@@ -8,6 +8,12 @@ FTP(File Transfer Protocol)は、`クライアント`-`サーバ`間で、ファ
 
 ## １．FTPサーバ（vsftpd）の導入
 
+### SELinuxの無効化
+
+```shell
+[root@localhost ~]# setenforce 0
+```
+
 ### vsftpdのインストール
 
 ```shell
@@ -110,7 +116,7 @@ ftpusersの確認
 [root@localhost ~]# cat /etc/vsftpd/ftpusers
 ```
 
-ユーザ`user`が含まれていないことを確認する。このファイルに記載されてるユーザはFTP接続ができない。
+ユーザ`user`が含まれていないことを確認する。このファイルに記載されてるユーザはFTP接続ができない。アクセスを拒否したいユーザの場合、以下に追記します。
 
 ```shell
 # Users that are not allowed to login via ftp
@@ -133,10 +139,10 @@ nobody
 ### user_listの設定
 
 ```shell
-[root@localhost ~]# vi /etc/vsftpd/user_list
+[root@localhost ~]# cat /etc/vsftpd/user_list
 ```
 
-`user`以外は全てコメント化させる。このファイルに記載されていユーザのみFTP接続が利用できる。
+`user`以外は全てコメント化させる。このファイルに記載されていないユーザのみFTP接続が利用できる。
 
 ```shell
 # vsftpd userlist
@@ -186,9 +192,10 @@ user
 [root@localhost ~]# firewall-cmd --list-all
 ```
 
+- servicesにftpが入っていることを確認
+- portsに4000-4010/tcpが入っていることを確認
 
 ```shell
-[root@localhost ~]# firewall-cmd --list-all
 public (active)
   target: default
   icmp-block-inversion: no
@@ -198,9 +205,9 @@ public (active)
   ports: 4000-4010/tcp
 ```
 
-### FFFTPのインストール
-
 ### 動作確認
+
+教科書「CentOS7 サーバー徹底構築」のp.290を見ながら、Windowsマシンからのアクセスができることを確認する。
 
 ## ファイルサーバ構築
 
@@ -240,9 +247,11 @@ public (active)
 [root@file ~]# vi /etc/samba/smb.conf
 ```
 
+教科書「CentOS7 サーバー徹底構築」のp.238を確認する。
+
 - 以下の内容を変更
   - workgroup = WORKGROUP
-
+        
 ```conf
 # See smb.conf.example for a more detailed config file or
 # read the smb.conf manpage.
@@ -300,14 +309,7 @@ Added user user.
 ### ファイアウォールの設定
 
 ```shell
-[root@localhost ~]# firewall-cmd --add-service=samba --zone=public
 [root@localhost ~]# firewall-cmd --add-service=samba --zone=public --permanent
-```
-
-### SELinuxの無効化
-
-```shell
-[root@localhost ~]# setenforce 0
 ```
 
 ### 動作確認
@@ -330,12 +332,11 @@ Windowsからファイルサーバにアクセスする。エクスプローラ�
     [user@ns1 ~]$ vim sample.txt
     ```
 
-Windowsのコマンドプロンプトを開き、ファイル共有として接続しているユーザを確認する。
+ - Windowsのコマンドプロンプトを開き、ファイル共有として接続しているユーザを確認する。
 
-```shell
-C:\Users\user>net use
-```
-
+    ```shell
+    C:\Users\user>net use
+    ```
 
 ## ２．複数ユーザ間での共有ディレクトリ
 
@@ -367,7 +368,6 @@ Sambaで複数のユーザが共有できるフォルダを設置する。
 新しいパスワード:
 新しいパスワードを再入力してください:
 passwd: すべての認証トークンが正しく更新できました。
-[root@localhost ~]#
 ```
 
 ### smb.confの設定
@@ -458,23 +458,23 @@ Windowsからの接続するユーザを全てGuest接続として、すべて�
 以下のコマンドにて、named.confを開きます。
 
 ```shell
-[root@localhost ~]# vi /etc/named.conf
+[root@localhost ~]# vim /etc/named.conf
 ```
 
 以下の設定箇所を変更
 
-- listen-on port 53 { 127.0.0.1; 10.45.48.0/24; };
-- allow-query     { localhost; 10.45.48.0/24; };
+- listen-on port 53 { 127.0.0.1; 10.45.46.0/24; };
+- allow-query     { localhost; 10.45.46.0/24; };
 - forwarders { 10.45.100.100; };
 - forward only;
-- zone "j00.sangidai.com" IN {
+- zone "jxx.sangidai.com" IN {
         type master;
-        file "j00.sangidai.zone";
+        file "jxx.sangidai.zone";
   };
 
-  zone "48.45.10.in-addr.arpa" IN {
+  zone "46.45.10.in-addr.arpa" IN {
         type master;
-        file "48.45.10.rzone";
+        file "46.45.10.rzone";
   };
 
 ```shell
@@ -491,7 +491,7 @@ Windowsからの接続するユーザを全てGuest接続として、すべて�
 
 options {
         //DNSサーバ及びクライアントPCのネットワークアドレスを追加
-        listen-on port 53 { 127.0.0.1; 10.45.48.0/24; };
+        listen-on port 53 { 127.0.0.1; 10.45.46.0/24; };
         listen-on-v6 port 53 { ::1; };
         directory       "/var/named";
         dump-file       "/var/named/data/cache_dump.db";
@@ -500,7 +500,7 @@ options {
         recursing-file  "/var/named/data/named.recursing";
         secroots-file   "/var/named/data/named.secroots";
         //DNSサーバ及びクライアントPCのネットワークアドレスを追加
-        allow-query     { localhost; 10.45.48.0/24; };
+        allow-query     { localhost; 10.45.46.0/24; };
         forwarders { 10.45.100.100; };
 
         /* 省略 */
@@ -533,14 +533,14 @@ zone "." IN {
         file "named.ca";
 };
 
-zone "j00.sangidai.com" IN {
+zone "jxx.sangidai.com" IN {
         type master;
-        file "j00.sangidai.zone";
+        file "jxx.sangidai.zone";
 };
 
-zone "48.45.10.in-addr.arpa" IN {
+zone "46.45.10.in-addr.arpa" IN {
         type master;
-        file "48.45.10.rzone";
+        file "46.45.10.rzone";
 };
 
 include "/etc/named.rfc1912.zones";
@@ -558,50 +558,50 @@ include "/etc/named.root.key";
 ### j00.sangidai.zoneの変更
 
 ```shell
-[root@localhost ~]# vi /var/named/j00.sangidai.zone
+[root@localhost ~]# vim /var/named/jxx.sangidai.zone
 ```
 
 ```conf
 TTL    86400
-@       IN      SOA     ns1.j00.sangidai.com. postmaster.j00.sangidai.com. (
+@       IN      SOA     ns1.jxx.sangidai.com. postmaster.j00.sangidai.com. (
                 2022112501      ;serial
                 3h              ;refresh
                 1h              ;retry
                 1w              ;expire
                 1h )            ;minimum
 
-        IN      NS      ns1.j00.sangidai.com.
-        IN      A       10.45.48.45
+        IN      NS      ns1.jxx.sangidai.com.
+        IN      A       10.45.46.xx
 
-ns1     IN      A       10.45.48.45
-file    IN      CNAME   ns1
+ns1     IN      A       10.45.46.xx
+file    IN      A       10.45.46.xx
 ```
 
 ### 48.45.10.rzoneの変更
 
 ```shell
-[root@localhost ~]# vi /var/named/48.45.10.rzone
+[root@localhost ~]# vim /var/named/46.45.10.rzone
 ```
 
 ```shell
 $TTL    86400
-@       IN      SOA     ns1.j00.sangidai.com. postmaster.j00.sangidai.com. (
+@       IN      SOA     ns1.jxx.sangidai.com. postmaster.j00.sangidai.com. (
                 2022112501      ;serial
                 3h              ;refresh
                 1h              ;retry
                 1w              ;expire
                 1h )            ;minimum
 
-        IN      NS      ns1.j00.sangidai.com.
+        IN      NS      ns1.jxx.sangidai.com.
 
-45      IN      PTR     ns1.j00.sangidai.com.
-45      IN      PTR     file.j00.sangidai.com.
+xx      IN      PTR     ns1.jxx.sangidai.com.
+xx      IN      PTR     file.jxx.sangidai.com.
 ```
 
 ### ゾーンファイルの確認
 
 ```shell
-[root@localhost ~]# named-checkzone j00.sangidai.com /var/named/j00.sangidai.zone
+[root@localhost ~]# named-checkzone jxx.sangidai.com /var/named/jxx.sangidai.zone
 ```
 
 以下のように表示されれば成功
@@ -612,13 +612,13 @@ OK
 ```
 
 ```shell
-[root@localhost ~]# named-checkzone 48.45.10.in-addr.arpa /var/named/48.45.10.rzone
+[root@localhost ~]# named-checkzone 46.45.10.in-addr.arpa /var/named/46.45.10.rzone
 ```
 
 以下のように表示されれば成功
 
 ```shell
-zone 48.45.10.in-addr.arpa/IN: loaded serial 2022111701
+zone 46.45.10.in-addr.arpa/IN: loaded serial 2022111701
 OK
 ```
 
@@ -649,5 +649,5 @@ C:\Users\user>net use
 ```
 
 ```shell
-C:\Users\user>net use \\file.j00.sangidai.com\IPC$  /delete
+C:\Users\user>net use \\file.jxx.sangidai.com\IPC$  /delete
 ```
