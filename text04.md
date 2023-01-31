@@ -316,6 +316,10 @@ Added user user.
 [root@localhost ~]# firewall-cmd --add-service=samba --zone=public --permanent
 ```
 
+```shell
+[root@localhost ~]# firewall-cmd --reload
+```
+
 ### 動作確認
 
 Windowsからファイルサーバにアクセスする。エクスプローラを起動し、アドレスバーに`￥￥サーバのIPアドレス`のように入力する。続いて、Samabaユーザのユーザ名とパスワードを入力する。
@@ -422,6 +426,9 @@ Windowsからの接続するユーザを全てGuest接続として、すべて�
 ```shell
 [root@file ~]# vi /etc/samba/smb.conf
 ```
+
+- [global]の内容に追記
+- [share]の内容を変更
 
 ```conf
 # See smb.conf.example for a more detailed config file or
