@@ -1,43 +1,101 @@
 # サーバー構築実習（CentOS7）
 
-## メール
+## メールサーバ構築
 
+### メールとは
+
+電子メールは、仕事だけではなくプライベートな生活でも欠かせないツールです。しかし、電子メールには危険な側面が多く存在し、適正な運用を求められる。
+
+## １．DNSサーバの導入
+
+### DNSサーバの設定
+
+VM Wareを2つ同時に起動し、サーバPCを2台立ち上げる。
+1つをMailサーバ(IP:10.45.46.yy)、もう1つをDNSサーバ(IP:10.45.46.xx)とする。
+
+### 構築するサーバの設定
+
+|  名前  |  ホスト名 |  ドメイン名  |  IPアドレス  |
+| ---- | ---- | ---- | ---- |
+|  ネームサーバ  |  dns1  |　itxx.sangi.com  |  10.45.46.xx |
+|  管理者メアド  |  postmaster  |  itxx.sangi.com  |  -  |
+| メールサーバ  |  mail  |  itxx.sangi.com  |  10.45.46.yy  |
+
+### namde.confの設定
+
+以下のコマンドにて、named.confを開きます。
 
 ```shell
-[root@localhost ~]# yum -y install bind bind-chroot bind-utils
+[root@localhost ~]# vim /etc/named.conf
 ```
+
+以下の設定箇所を変更
+
+- listen-on port 53 { 127.0.0.1; 10.45.46.0/24; };
+- allow-query     { localhost; 10.45.46.0/24; };
+- forwarders { 10.45.100.100; };
+- forward only;
+- 正引きゾーンと逆引きゾーンの追加
+
+| ゾーン種類 | タイプ | ゾーン名 | ファイル名 |
+| --- | --- | --- | --- |
+| 正引き | master |itxx.sangi.com | itxx.sangi.com.zone |
+| 逆引き | master | 46.45.10.in-addr.arpa | 46.45.10.in-addr.arpa.rzone |
+
+### named.confのチェック
+
+以下のコマンドで、named.confファイルに設定ミスや記述ミスが無いか確認をします。設定にミスがある場合、デバッグ機能として、エラーコードが吐き出されます。
+
+```shell
+[root@localhost ~]# named-checkconf
+```
+
+### itxx.sangi.com.zoneの変更
+
+```shell
+[root@localhost ~]# vim /var/named/itxx.sangi.com.zone
+```
+
+- Aレコードの追記
 
 ```shell
 $TTL    86400
-@       IN      SOA     ns1.j00sangidai.com. postmaster.j00.sangidai.com. (
-                2022111702      ;serial
-                3h              ;refresh
-                1h              ;retry
-                1w              ;expire
-                1h )            ;minimum
 
+/* 省略 */
 
-        IN      NS      ns1.j00.sangidai.com.
-        IN      MX      10      mail.j00.sangidai.com.
-        IN      A       10.46.48.16
-
-ns1     IN      A       10.45.48.16
-mail    IN      A       10.45.48.16
+dns1     IN      A       10.45.48.xx
+mail    IN      A       10.45.48.yy
 ```
+
+### 46.45.10.in-addr.arpa.rzoneの変更
+
+```shell
+[root@localhost ~]# vim /var/named/46.45.10.in-addr.arpa.rzone
+```
+
+- PTRレコードの追加
+
 
 ```shell
 $TTL    86400
-@       IN      SOA     ns1.j00.sangidai.com. postmaster.j00.sangidai.com. (
-                2022111701      ;serial
-                3h              ;refresh
-                1h              ;retry
-                1w              ;expire
-                1h )            ;minimum
 
-        IN      NS      ns1.j00.sangidai.com.
-16      IN      PTR     ns1.j00.sangidai.com.
-16      IN      PTR     mail.j00.sangidai.com.
+/* 省略 */
+
+xx      IN      PTR     dns1.itxx.sangi.com.
+yy      IN      PTR     mail.jitxx.sangi.com.
 ```
+
+## ２．メールサーバ（Postfix, Dovecot）の導入
+
+代表的なLinux用メールサーバソフト
+
+- SMTPサーバ「Postfix」
+  - ユーザが送信に利用する。または、ドメイン間のメール配送に使用される。
+
+- POP3/IMAPサーバ「Dovecot」
+  - ユーザが自分宛のメールを確認する際に使用される。
+
+### PostfixとDovecotのインストール
 
 ```shell
 [root@localhost ~]# yum -y install postfix
@@ -47,26 +105,59 @@ $TTL    86400
 [root@localhost ~]# yum -y install dovecot
 ```
 
+### ファイアウォールの設定
+
 ```shell
-[root@localhost ~]# firewall-cmd --add-service=smtp --zone=public
-success
 [root@localhost ~]# firewall-cmd --add-service=smtp --zone=public --permanent
-success
-[root@localhost ~]# firewall-cmd --add-port=110/tcp --zone=public
-success
+```
+
+```shell
 [root@localhost ~]# firewall-cmd --add-port=110/tcp --zone=public --permanent
-success
-[root@localhost ~]# firewall-cmd --add-port=143/tcp --zone=public
-success
+```
+
+```shell
 [root@localhost ~]# firewall-cmd --add-port=143/tcp --zone=public --permanent
-success
+```
+
+```shell
 [root@localhost ~]# firewall-cmd --reload
-success
 ```
 
 ```shell
 [root@localhost ~]# vim /etc/postfix/main.cf 
 ```
+
+### main.cfの設定
+
+以下のコマンドにて、main.cfを開きます。
+
+```shell
+[root@localhost ~]# vi /etc/postfix/main.cf
+```
+
+以下の設定箇所を変更する。
+
+- 76行目
+  - myhostname = mail.itxx.sangi.com
+- 83行目
+  - mydomain = itxx.sangi.com
+- 99行目
+  - myorigin = $mydomain
+- 113行目
+  - inet_interfaces = all
+- 116行目
+  - #inet_interfaces = localhost
+- 164行目
+  - #mydestination = $myhostname, localhost,.$mydomain, localhost
+- 165行目
+  - mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+- 208行目
+  - local_recipient_maps = unix:passwd.byname $alias_maps
+- 264行目
+  - mynetworks = 127.0.0.1, 10.45.46.0/24
+- 419行目
+  - home_maikbix = Maildir/
+
 
 ```conf
 
@@ -81,14 +172,14 @@ success
 #
 #myhostname = host.domain.tld
 #myhostname = virtual.domain.tld
-myhostname = mail.j00.sangidai.com
+myhostname = mail.itxx.sangi.com
 # The mydomain parameter specifies the local internet domain name.
 # The default is to use $myhostname minus the first component.
 # $mydomain is used as a default value for many other configuration
 # parameters.
 #
 #mydomain = domain.tld
-mydomain = j00.sangidai.com
+mydomain = itxx.sangi.com
 
 # SENDING MAIL
 # 
@@ -149,7 +240,7 @@ unknown_local_recipient_reject_code = 550
 # (the value on the table right-hand side is not used).
 #
 #mynetworks = 168.100.189.0/28, 127.0.0.0/8
-mynetworks = 127.0.0.1, 10.45.48.0/24
+mynetworks = 127.0.0.1, 10.45.46.0/24
 #mynetworks = $config_directory/mynetworks
 #mynetworks = hash:/etc/postfix/network_table
 
@@ -177,13 +268,24 @@ home_mailbox = Maildir/
 #mail_spool_directory = /var/spool/mail
 ```
 
+### main.cfのチェック
+
 ```shell
 [root@localhost ~]# postfix check
 ```
 
+### dovecot.confの設定
+
+以下のコマンドにて、dovecot.confを開きます。
+
 ```shell
 [root@localhost ~]# vim /etc/dovecot/dovecot.conf 
 ```
+
+以下の設定箇所を変更する。
+
+- 24行目
+  - protocols = imap pop3 lmtp
 
 ```conf
 
@@ -206,9 +308,20 @@ protocols = imap pop3 lmtp
 #listen = *, ::
 ```
 
+### 10-mail.confの設定
+
+以下のコマンドにて、10-mail.confを開きます。
+
 ```shell
 [root@localhost ~]# vim /etc/dovecot/conf.d/10-mail.conf 
 ```
+
+以下の設定箇所を変更する。
+
+- 30行目
+  - mail_location = mail:~/Maildir
+- 196行目
+  - valid_chroot_dirs = /home
 
 ```conf
 
@@ -236,9 +349,20 @@ mail_location = maildir:~/Maildir
 valid_chroot_dirs = /home
 ```
 
+### 10-auth.confの設定
+
+以下のコマンドにて、10-auth.confを開きます。
+
 ```shell
 [root@localhost ~]# vim /etc/dovecot/conf.d/10-auth.conf 
 ```
+
+以下の設定箇所を変更する。
+
+- 10行目
+  - disable_plaintext_auth = no
+- 100行目
+  - auth_mechanisms = plain login
 
 ```conf
 
@@ -272,9 +396,20 @@ auth_mechanisms = plain login
 ##
 ```
 
+### 10-master.confの設定
+
+以下のコマンドにて、10-master.confを開きます。
+
 ```shell
 [root@localhost ~]# vim /etc/dovecot/conf.d/10-master.conf 
 ```
+
+以下の設定箇所を変更する。
+
+- 19行目
+  - port = 143
+- 40行目
+  - port = 110
 
 ```conf
 
@@ -311,9 +446,18 @@ service lmtp {
   }
 ```
 
+### 10-ssl.confの設定
+
+以下のコマンドにて、10-ssl.confを開きます。
+
 ```shell
 [root@localhost ~]# vim /etc/dovecot/conf.d/10-ssl.conf 
 ```
+
+以下の設定箇所を変更する。
+
+- 8行目
+  - ssl = no
 
 ```conf
 ##
@@ -333,19 +477,80 @@ ssl_cert = </etc/pki/dovecot/certs/dovecot.pem
 ssl_key = </etc/pki/dovecot/private/dovecot.pem
 ```
 
+### メールボックスの作成
+
+- 既存ユーザにメールボックスを作成
+
 ```shell
 [root@localhost ~]# mkdir -p /etc/skel/Maildir/{new,cur,tmp}
+```
+
+```shell
 [root@localhost ~]# chmod -R 700 /etc/skel/Maildir/
 ```
 
+- 新規ユーザにメールボックスを作成
+
 ```shell
 [user@localhost ~]$ mkdir ~/Maildir
-[user@localhost ~]$ chmod -R 700 ~/Maildir/
 ```
 
 ```shell
+[user@localhost ~]$ chmod -R 700 ~/Maildir/
+```
+
+### PostfixとDovecotサービスの起動
+
+```shell
 [root@localhost ~]# systemctl start postfix.service
+```
+
+```shell
 [root@localhost ~]# systemctl start dovecot.service
+```
+
+### PostfixとDovecotサービスの自動起動の有効化
+
+```shell
 [root@localhost ~]# systemctl enable postfix.service
+```
+
+```shell
 [root@localhost ~]# systemctl enable dovecot.service
 ```
+
+## 動作確認
+
+### 簡易動作チェック
+
+自分から自身にメールを送信し、受信する
+
+- メール送信（Ctrl + Dで送信）
+
+```shell
+[user@localhost ~ ]$ mail user@itxx.sangi.com
+Subuject: こんにちは
+お元気ですか
+```
+
+- メール受信
+
+```shell
+[user@localhost ~ ]$mail -f ~/Maildir
+```
+
+受信したメールリストが表示されるので、番号を打つと、閲覧可能になる。
+
+### Thunderbirdによるチェック
+
+1. 教科書「CentOS7 サーバー徹底構築」のp.308見ながら、CentOSにThunderbirdをインストールする。
+
+2. userでメールアカウントにログインする。
+
+3. 新規ユーザを追加する。
+
+4. Windows10にもThunderbirdをインストールする。
+
+5. 新規ユーザでメールアカウントにログインする。
+
+6. 相互間でメールの送受信を行う。

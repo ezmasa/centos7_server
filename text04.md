@@ -517,6 +517,7 @@ VM Wareを2つ同時に起動し、サーバPCを2台立ち上げる。
 |  ネームサーバ  |  dns1  |　itxx.sangi.local  |  10.45.46.xx |
 |  管理者メアド  |  postmaster  |  itxx.sangi.local  |  -  |
 |  ファイルサーバ  |  file  |  itxx.sangi.local  |  10.45.46.yy  |
+
 ### namde.confの設定
 
 以下のコマンドにて、named.confを開きます。
@@ -562,7 +563,7 @@ dns1    IN      A       10.45.46.xx
 file    IN      A       10.45.46.yy
 ```
 
-### 48.45.10.in-addr.arpa.dbの変更
+### 46.45.10.in-addr.arpa.dbの変更
 
 ```shell
 [root@localhost ~]# vim /var/named/46.45.10.in-addr.arpa.db

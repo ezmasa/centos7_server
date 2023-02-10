@@ -167,7 +167,7 @@ Loading mirror speeds from cached hostfile
 [root@localhost ~]# vi /etc/named.conf
 ```
 
-以下の設定箇所を変更
+以下の設定箇所を変更する。
 
 - listen-on port 53 { 127.0.0.1; 10.45.48.0/24; };
 - allow-query     { localhost; 10.45.48.0/24; };
