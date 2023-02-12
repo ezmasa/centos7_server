@@ -49,9 +49,10 @@ openssh-server.x86_64                      7.4p1-11.el7                @anaconda
 
 以下の内容を変更する。
 
-- 38行目
+- 38行目をコメントアウト
   - #PermitRootLogin yes
-    - PermitRootLogin no
+- 39行目に追加
+  - PermitRootLogin no
 
 ```conf
 /* 省略 */
