@@ -63,7 +63,7 @@ $TTL    86400
 
 /* 省略 */
 
-dns1     IN      A       10.45.48.xx
+dns1    IN      A       10.45.48.xx
 mail    IN      A       10.45.48.yy
 ```
 
@@ -105,26 +105,14 @@ yy      IN      PTR     mail.jitxx.sangi.com.
 [root@localhost ~]# yum -y install dovecot
 ```
 
-### ファイアウォールの設定
+### PostfixとDovecotサービスの起動
 
 ```shell
-[root@localhost ~]# firewall-cmd --add-service=smtp --zone=public --permanent
+[root@localhost ~]# systemctl start postfix.service
 ```
 
 ```shell
-[root@localhost ~]# firewall-cmd --add-port=110/tcp --zone=public --permanent
-```
-
-```shell
-[root@localhost ~]# firewall-cmd --add-port=143/tcp --zone=public --permanent
-```
-
-```shell
-[root@localhost ~]# firewall-cmd --reload
-```
-
-```shell
-[root@localhost ~]# vim /etc/postfix/main.cf 
+[root@localhost ~]# systemctl start dovecot.service
 ```
 
 ### main.cfの設定
@@ -132,7 +120,7 @@ yy      IN      PTR     mail.jitxx.sangi.com.
 以下のコマンドにて、main.cfを開きます。
 
 ```shell
-[root@localhost ~]# vi /etc/postfix/main.cf
+[root@localhost ~]# vim /etc/postfix/main.cf
 ```
 
 以下の設定箇所を変更する。
@@ -499,14 +487,14 @@ ssl_key = </etc/pki/dovecot/private/dovecot.pem
 [user@localhost ~]$ chmod -R 700 ~/Maildir/
 ```
 
-### PostfixとDovecotサービスの起動
+### PostfixとDovecotサービスの再起動
 
 ```shell
-[root@localhost ~]# systemctl start postfix.service
+[root@localhost ~]# systemctl restart postfix.service
 ```
 
 ```shell
-[root@localhost ~]# systemctl start dovecot.service
+[root@localhost ~]# systemctl restart dovecot.service
 ```
 
 ### PostfixとDovecotサービスの自動起動の有効化
@@ -517,6 +505,24 @@ ssl_key = </etc/pki/dovecot/private/dovecot.pem
 
 ```shell
 [root@localhost ~]# systemctl enable dovecot.service
+```
+
+### ファイアウォールの設定
+
+```shell
+[root@localhost ~]# firewall-cmd --add-service=smtp --zone=public --permanent
+```
+
+```shell
+[root@localhost ~]# firewall-cmd --add-port=110/tcp --zone=public --permanent
+```
+
+```shell
+[root@localhost ~]# firewall-cmd --add-port=143/tcp --zone=public --permanent
+```
+
+```shell
+[root@localhost ~]# firewall-cmd --reload
 ```
 
 ## 動作確認
