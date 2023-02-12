@@ -16,8 +16,8 @@ VM Wareを2つ同時に起動し、サーバPCを2台立ち上げる。
 ### 構築するサーバの設定
 
 |  名前  |  ホスト名 |  ドメイン名  |  IPアドレス  |
-| ---- | ---- | ---- | ---- |
-|  ネームサーバ  |  dns1  |　itxx.sangi.com  |  10.45.46.xx |
+| --- | --- | --- | --- |
+|  ネームサーバ  |  dns1  |  itxx.sangi.com  |  10.45.46.xx |
 |  管理者メアド  |  postmaster  |  itxx.sangi.com  |  -  |
 | メールサーバ  |  mail  |  itxx.sangi.com  |  10.45.46.yy  |
 
