@@ -14,7 +14,7 @@ DNS(ドメイン・ネーム・システム)は、インターネットを利用
 
 当初、IPアドレスに代わるホストの指定方法として、hostsファイルによる識別が行われていた。当時は、ホストの追加（削除）の度にhostsファイルを更新し、公開していた。
 
-### www.google.comに疎通確認
+### 疎通確認
 
 pingコマンドでホスト名`www.google.com`を指定して、疎通できるのか確認してみる。
 
@@ -25,9 +25,9 @@ ping: www.google.com: 名前またはサービスが不明です
 
 上記のように送れないことが確認できる。
 
-### hostsの権限を確認
+### ファイル権限を確認
 
-ls -l コマンドで、hostsファイルのファイルのパーミッション（所有権）を確認してみる。
+ls -l コマンドで、`hostsファイル`のファイルのパーミッション（所有権）を確認してみる。
 
 ```shell
 [root@localhost ~]# ls -l /etc/hosts
@@ -36,7 +36,7 @@ ls -l コマンドで、hostsファイルのファイルのパーミッション
 
 userには、読込みのみ許可されていることが確認できる。
 
-### userに書込みの権限を付与
+### 書込みの権限を付与
 
 chmodコマンドで、userにも書込み可能にする。
 
@@ -58,7 +58,7 @@ chmodコマンドで、userにも書込み可能にする。
 viコマンドでファイルを開く。
 
 ```shell
-[user@localhost /]$ vi /etc/hosts
+[user@localhost /]$ vim /etc/hosts
 ```
 
 - 142.251.42.132 www.google.comの追加
@@ -164,13 +164,13 @@ Loading mirror speeds from cached hostfile
 以下のコマンドにて、named.confを開きます。
 
 ```shell
-[root@localhost ~]# vi /etc/named.conf
+[root@localhost ~]# vim /etc/named.conf
 ```
 
 以下の設定箇所を変更する。
 
-- listen-on port 53 { 127.0.0.1; 10.45.48.0/24; };
-- allow-query     { localhost; 10.45.48.0/24; };
+- listen-on port 53 { 127.0.0.1; 10.45.46.0/24; };
+- allow-query     { localhost; 10.45.46.0/24; };
 - forwarders { 10.45.100.100; };
 - forward only;
 
@@ -188,7 +188,7 @@ Loading mirror speeds from cached hostfile
 
 options {
         //DNSサーバ及びクライアントPCのネットワークアドレスを追加
-        listen-on port 53 { 127.0.0.1; 10.45.48.0/24; };
+        listen-on port 53 { 127.0.0.1; 10.45.46.0/24; };
         listen-on-v6 port 53 { ::1; };
         directory       "/var/named";
         dump-file       "/var/named/data/cache_dump.db";
@@ -197,7 +197,7 @@ options {
         recursing-file  "/var/named/data/named.recursing";
         secroots-file   "/var/named/data/named.secroots";
         //DNSサーバ及びクライアントPCのネットワークアドレスを追加
-        allow-query     { localhost; 10.45.48.0/24; };
+        allow-query     { localhost; 10.45.46.0/24; };
         forwarders { 10.45.100.100; };
 
         /* 省略 */
@@ -275,18 +275,13 @@ include "/etc/named.root.key";
 ### ファイアウォールの操作
 
 - FirewallにDNSサービス用の接続を許可
-
-```shell
-[root@localhost ~]# firewall-cmd --add-service=dns --zone=public
-success
-```
-
 - 恒久的に適用
 
 ```shell
 [root@localhost ~]# firewall-cmd --add-service=dns --zone=public --permanent
-success
 ```
+
+successと表示されれば成功
 
 - Firewallを再起動
 
@@ -299,8 +294,10 @@ success
 
 ```shell
 [root@localhost ~]# firewall-cmd --list-service
-ssh dhcpv6-client dns
 ```
+
+ssh dhcpv6-client dnsのようにdnsが含まれていれば成功
+
 
 - DNSのポート（53番ポート）の状態確認
 
@@ -310,7 +307,7 @@ DNSサーバ(Centos)のIPアドレスに53がくっついている
 [root@localhost ~]# netstat -nau
 Active Internet connections (servers and established)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State      
-udp        0      0 10.45.48.26:53          0.0.0.0:*  
+udp        0      0 10.45.46.26:53          0.0.0.0:*  
 ```
 
 ### 動作確認
@@ -332,8 +329,8 @@ DNSサーバには、「キャッシュサーバ（フルリゾルバ）」の�
 
 |  名前  |  ホスト名 |  IPアドレス  |
 | ---- | ---- | ---- |
-|  ネームサーバ  |  ns1.j00.sangidai.com  |　10.45.46.26 |
-|  管理者メアド  |  postmaster@j00.sangidai.com  |  10.45.46.26  |
+|  ネームサーバ  |  ns1.j00.sangidai.com  |　10.45.46.xx |
+|  管理者メアド  |  postmaster@j00.sangidai.com  |  -  |
 
 
 ### named.confの設定
@@ -383,7 +380,7 @@ zone "48.45.10.in-addr.arpa" IN {
 - j00.sangidai.zoneを作成
 
 ```shell
-[root@localhost ~]# vi /var/named/j00.sangidai.zone
+[root@localhost ~]# vim /var/named/j00.sangidai.zone
 ```
 
 以下のように記述する。
@@ -399,15 +396,15 @@ $TTL    86400
 
 
         IN      NS      ns1.j00.sangidai.com.
-        IN      A       10.46.48.26
+        IN      A       10.46.48.xx
 
-ns1     IN      A       10.45.48.26
+ns1     IN      A       10.45.48.xx
 ```
 
 - 46.45.10.rzoneを作成
 
 ```shell
-[root@localhost ~]# vi /var/named/48.45.10.rzone
+[root@localhost ~]# vim /var/named/46.45.10.rzone
 ```
 
 以下のように記述する。
@@ -422,7 +419,7 @@ $TTL    86400
                 1h )            ;minimum
 
         IN      NS      ns1.j00.sangidai.com.
-26      IN      PTR     ns1.j00.sangidai.com.
+xx      IN      PTR     ns1.j00.sangidai.com.
 ```
 
 ### ゾーンファイルの確認
@@ -439,13 +436,13 @@ OK
 ```
 
 ```shell
-[root@localhost ~]# named-checkzone 48.45.10.in-addr.arpa /var/named/48.45.10.rzone
+[root@localhost ~]# named-checkzone 46.45.10.in-addr.arpa /var/named/46.45.10.rzone
 ```
 
 以下のように表示されれば成功
 
 ```shell
-zone 48.45.10.in-addr.arpa/IN: loaded serial 2022111701
+zone 46.45.10.in-addr.arpa/IN: loaded serial 2022111701
 OK
 ```
 
