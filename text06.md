@@ -16,8 +16,8 @@ VM Wareを2つ同時に起動し、サーバPCを2台立ち上げる。
 ### 構築するサーバの設定
 
 |  名前  |  ホスト名 |  ドメイン名  |  IPアドレス  |
-| ---- | ---- | ---- | ---- |
-|  ネームサーバ  |  dns1  |　itxx.sangi.com  |  10.45.46.xx |
+| --- | --- | --- | --- |
+|  ネームサーバ  |  dns1  |  itxx.sangi.com  |  10.45.46.xx |
 |  管理者メアド  |  postmaster  |  itxx.sangi.com  |  -  |
 | メールサーバ  |  mail  |  itxx.sangi.com  |  10.45.46.yy  |
 
@@ -125,27 +125,26 @@ yy      IN      PTR     mail.jitxx.sangi.com.
 
 以下の設定箇所を変更する。
 
-- 76行目
+- 76行目：メールのホストに変更
   - myhostname = mail.itxx.sangi.com
-- 83行目
+- 83行目：メールのドメインに変更
   - mydomain = itxx.sangi.com
-- 99行目
+- 99行目：コメントアウト無効化
   - myorigin = $mydomain
-- 113行目
+- 113行目：利用するインターフェースを全てに
   - inet_interfaces = all
-- 116行目
+- 116行目：コメントアウト
   - #inet_interfaces = localhost
-- 164行目
+- 164行目：コメントアウト
   - #mydestination = $myhostname, localhost,.$mydomain, localhost
-- 165行目
+- 165行目：独自のドメインを有効に
   - mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
-- 208行目
+- 208行目：存在しないアドレスからの受信は拒否
   - local_recipient_maps = unix:passwd.byname $alias_maps
-- 264行目
+- 264行目：自身のネットワークを追加
   - mynetworks = 127.0.0.1, 10.45.46.0/24
-- 419行目
+- 419行目：メール保存方式をMaildir形式に
   - home_maikbix = Maildir/
-
 
 ```conf
 
@@ -258,6 +257,8 @@ home_mailbox = Maildir/
 
 ### main.cfのチェック
 
+何を表示されなければ成功
+
 ```shell
 [root@localhost ~]# postfix check
 ```
@@ -272,7 +273,7 @@ home_mailbox = Maildir/
 
 以下の設定箇所を変更する。
 
-- 24行目
+- 24行目：受信プロトコルを以下に
   - protocols = imap pop3 lmtp
 
 ```conf
@@ -306,9 +307,9 @@ protocols = imap pop3 lmtp
 
 以下の設定箇所を変更する。
 
-- 30行目
+- 30行目：各ユーザのメールディレクトリからメールを取り出す
   - mail_location = mail:~/Maildir
-- 196行目
+- 196行目：chroot導入
   - valid_chroot_dirs = /home
 
 ```conf
@@ -347,9 +348,9 @@ valid_chroot_dirs = /home
 
 以下の設定箇所を変更する。
 
-- 10行目
+- 10行目：暗号化なし(SSL)の認証を許可
   - disable_plaintext_auth = no
-- 100行目
+- 100行目：認証にログインを追加
   - auth_mechanisms = plain login
 
 ```conf
@@ -394,9 +395,9 @@ auth_mechanisms = plain login
 
 以下の設定箇所を変更する。
 
-- 19行目
+- 19行目：imapの143ポートを有効に
   - port = 143
-- 40行目
+- 40行目:pop3の110ポートを有効に
   - port = 110
 
 ```conf
@@ -444,7 +445,7 @@ service lmtp {
 
 以下の設定箇所を変更する。
 
-- 8行目
+- 8行目：sslを無効
   - ssl = no
 
 ```conf
