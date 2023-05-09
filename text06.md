@@ -551,6 +551,7 @@ Subuject: こんにちは
 ### Thunderbirdによるチェック
 
 1. 教科書「CentOS7 サーバー徹底構築」のp.308見ながら、CentOSにThunderbirdをインストールする。
+  - CentOSにThunderbirdがインストールできない。
 
 2. userでメールアカウントにログインする。
 
