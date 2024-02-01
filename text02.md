@@ -171,7 +171,7 @@ Loading mirror speeds from cached hostfile
 
 - listen-on port 53 { 127.0.0.1; 10.45.46.0/24; };
 - allow-query     { localhost; 10.45.46.0/24; };
-- forwarders { 10.45.100.100; };
+- forwarders { 8.8.8.8; };
 - forward only;
 
 ```shell
