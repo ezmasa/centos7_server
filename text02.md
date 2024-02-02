@@ -352,7 +352,7 @@ zone "j00.sangidai.com" IN {
 
 zone "48.45.10.in-addr.arpa" IN {
         type master;
-        file "48.45.10.rzone";
+        file "46.45.10.rzone";
 };
 ```
 
@@ -396,9 +396,9 @@ $TTL    86400
 
 
         IN      NS      ns1.j00.sangidai.com.
-        IN      A       10.46.48.xx
+        IN      A       10.46.46.xx
 
-ns1     IN      A       10.45.48.xx
+ns1     IN      A       10.45.46.xx
 ```
 
 - 46.45.10.rzoneを作成
@@ -412,7 +412,7 @@ ns1     IN      A       10.45.48.xx
 ```shell
 $TTL    86400
 @       IN      SOA     ns1.j00.sangidai.com. postmaster.j00.sangidai.com. (
-                2022111701      ;serial
+                2024020101      ;serial
                 3h              ;refresh
                 1h              ;retry
                 1w              ;expire
@@ -442,7 +442,7 @@ OK
 以下のように表示されれば成功
 
 ```shell
-zone 46.45.10.in-addr.arpa/IN: loaded serial 2022111701
+zone 46.45.10.in-addr.arpa/IN: loaded serial 2024020101
 OK
 ```
 
