@@ -350,7 +350,7 @@ zone "j00.sangidai.com" IN {
         file "j00.sangidai.zone";
 };
 
-zone "48.45.10.in-addr.arpa" IN {
+zone "46.45.10.in-addr.arpa" IN {
         type master;
         file "46.45.10.rzone";
 };
@@ -388,7 +388,7 @@ zone "48.45.10.in-addr.arpa" IN {
 ```shell
 $TTL    86400
 @       IN      SOA     ns1.j00sangidai.com. postmaster.j00.sangidai.com. (
-                2022111702      ;serial
+                2024020102      ;serial
                 3h              ;refresh
                 1h              ;retry
                 1w              ;expire
