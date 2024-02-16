@@ -198,7 +198,7 @@ options {
         secroots-file   "/var/named/data/named.secroots";
         //DNSサーバ及びクライアントPCのネットワークアドレスを追加
         allow-query     { localhost; 10.45.46.0/24; };
-        forwarders { 10.45.100.100; };
+        forwarders { 8.8.8.8; };
 
         /* 省略 */
         
@@ -247,7 +247,7 @@ include "/etc/named.root.key";
 - BINDの起動
 
 ```shell
-[root@localhost ~]# systmel start named-chroot.service
+[root@localhost ~]# systemctl start named-chroot.service
 ```
 
 - OS起動時にBINDの自動起動を有効化
@@ -387,7 +387,7 @@ zone "46.45.10.in-addr.arpa" IN {
 
 ```shell
 $TTL    86400
-@       IN      SOA     ns1.j00sangidai.com. postmaster.j00.sangidai.com. (
+@       IN      SOA     ns1.j00.sangidai.com. postmaster.j00.sangidai.com. (
                 2024020102      ;serial
                 3h              ;refresh
                 1h              ;retry
